@@ -21,9 +21,22 @@ public class LogicServlet extends HttpServlet {
             return;
         }
         field.getField().put(index,Sign.CROSS);
+        if(checkWin(response,currentSession,field)){
+            return;
+        }
         int emptyFieldIndex = field.getEmptyFieldIndex();
         if(emptyFieldIndex>=0){
             field.getField().put(emptyFieldIndex,Sign.NOUGHT);
+            if(checkWin(response,currentSession,field)) {
+                return;
+            }
+        }else{
+            currentSession.setAttribute("draw", true);
+            List<Sign> data = field.getFieldData();
+            currentSession.setAttribute("field", field);
+            currentSession.setAttribute("data",data);
+            response.sendRedirect("/index.jsp");
+            return;
         }
         List<Sign> data = field.getFieldData();
         currentSession.setAttribute("field", field);
@@ -31,15 +44,25 @@ public class LogicServlet extends HttpServlet {
 
         response.sendRedirect("/index.jsp");
     }
-    private Field extractField(HttpSession currentSession){
+    private Field extractField(HttpSession currentSession) {
         Object fieldAttribute = currentSession.getAttribute("field");
-        if(Field.class!=fieldAttribute.getClass()){
+        if (Field.class != fieldAttribute.getClass()) {
             currentSession.invalidate();
-            throw  new RuntimeException("Session is broken, try one more time");
+            throw new RuntimeException("Session is broken, try one more time");
         }
         return (Field) fieldAttribute;
     }
-
+private boolean checkWin(HttpServletResponse response, HttpSession currentSession, Field field) throws IOException {
+    Sign winner = field.checkWin();
+    if(Sign.CROSS==winner||Sign.NOUGHT==winner){
+        currentSession.setAttribute("winner",winner);
+        List<Sign> data = field.getFieldData();
+        currentSession.setAttribute("data", data);
+        response.sendRedirect("/index.jsp");
+        return true;
+        }
+    return false;
+}
 
     private int getSelectedIndex(HttpServletRequest request) {
         String click = request.getParameter("click");
